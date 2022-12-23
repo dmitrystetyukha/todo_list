@@ -20,13 +20,13 @@ class TaskUseCase:
         self._tasks.update(new_task)
 
     def delete(self, id: UUID):
-        self.delete(id)
+        self._tasks.delete(id)
 
-    def list(self, limit: int, offset: int) -> List[Task]:
-        self.list(limit, offset)
+    def list(self) -> List[Task]:
+        return self._tasks.list()
 
     def search_by_name(self, name_substr: str) -> List[Task]:
-        self.search_by_name(name_substr)
+        return self._tasks.search_by_name(name_substr)
 
     def search_by_status(self, status: Status) -> List[Task]:
-        self.search_by_status(status)
+        return self._tasks.search_by_status(status)

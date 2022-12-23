@@ -17,15 +17,12 @@ class TaskHTTPController:
         self._server = web.Application()
         self._server.add_routes(
             [
-                web.post("/tasks", self.create),
+                web.post("/tasks", self.create),  # работает
                 web.patch("/tasks/{id}", self.update),
-                web.get("/tasks/{id}", self.get),
+                web.get("/tasks/{id}", self.get_task),
                 web.get(
-                    "/tasks/list?limit={limit}&offset={offset}", self.list
-                ),
-                web.get("/tasks/search_by?name={name}", self.search_by_name),
-                web.get(
-                    "/tasks/search_by?status={status}", self.search_by_status
+                    "/tasks",
+                    self.get_tasklist,
                 ),
             ]
         )
@@ -67,7 +64,7 @@ class TaskHTTPController:
 
         return web.Response(text=f"Task with id {task.id} was created")
 
-    async def get(self, request: web.Request):
+    async def get_task(self, request: web.Request):
 
         id = request.match_info["id"]
         try:
@@ -106,11 +103,9 @@ class TaskHTTPController:
             raise web.HTTPInternalServerError(text=f"need JSON; {str(e)}")
 
         try:
-            task.status = task["status"]
+            task.status = Status(body["status"])
         except ValueError as e:
-            raise web.HTTPInternalServerError(
-                text=f"Internal server error! {str(e)}"
-            )
+            raise web.HTTPBadRequest(text=f"Bad request! {str(e)}")
 
         self._usecase.update(task)
         return web.Response(text=f"Task {task.id} updated! ")
@@ -123,32 +118,42 @@ class TaskHTTPController:
                 text=f"Internal server error! {str(e)}"
             )
 
-    async def list(self, limit, offset):
-        try:
-            task_list = self._usecase.list()
-        except Exception as e:
-            raise web.HTTPInternalServerError(
-                text=f"Internal server error! {str(e)}"
-            )
+    async def get_tasklist(self, request: web.Request):
+        task_list = []
+        params = request.rel_url.query
 
-        if limit == 0 or limit > len(task_list):
-            limit = len(task_list)
+        if "limit" and "offset" in params:
+            limit = int(params["limit"])
+            offset = int(params["offset"])
+            try:
+                task_list = self._usecase.list()
+            except Exception as e:
+                raise web.HTTPInternalServerError(
+                    text=f"Internal server error! {str(e)}"
+                )
 
-        if (offset + limit) > len(task_list):
+            if limit == 0 or limit > len(task_list) - offset:
+                limit = len(task_list) - offset
+
+            start_idx = offset - 1 if offset != 0 else offset
+            end_idx = offset - 1 + limit
+            task_list = task_list[start_idx:end_idx]
+
+        elif "name" in params:
+            name_substr = params["name"]
+            task_list = self._usecase.search_by_name(name_substr)
+
+        elif "status" in params:
+            try:
+                status = Status(params["status"])
+            except ValueError:
+                raise web.HTTPBadRequest(text="invalid status value")
+            task_list = self._usecase.search_by_status(status)
+
+        else:
             raise web.HTTPBadRequest(
-                text="Offset + limit more than list length"
+                text="Need Limit&Offset or Name or Status in reqest params"
             )
 
-        start_idx = offset
-        end_idx = limit - 1
-        task_list = task_list[start_idx:end_idx]
         resp = json.dumps(task_list, cls=CustomJSONEncoder)
         return web.Response(text=resp)
-
-    async def search_by_name(self, request: web.Request):
-        name_substr = request.match_info("name")
-        return self._usecase.search_by_name(name_substr)
-
-    async def search_by_status(self, request: web.Request):
-        status = request.match_info("status")
-        return self._usecase.search_by_status(status)

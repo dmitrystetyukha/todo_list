@@ -24,7 +24,7 @@ class BaseTask(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def list(self, limit: int, offset: int) -> List[Task]:
+    def list(self) -> List[Task]:
         raise NotImplementedError()
 
     @abc.abstractmethod

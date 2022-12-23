@@ -36,5 +36,5 @@ class InmemoryTasks(BaseTask):
 
     def search_by_status(self, status: Status) -> List[Task]:
         return list(
-            filter(lambda task: status == task.status, self._tasks.values)
+            filter(lambda task: status == task.status, self._tasks.values())
         )
