@@ -17,7 +17,7 @@ class TaskHTTPController:
         self._server = web.Application()
         self._server.add_routes(
             [
-                web.post("/tasks", self.create),  # работает
+                web.post("/tasks", self.create),
                 web.patch("/tasks/{id}", self.update),
                 web.get("/tasks/{id}", self.get_task),
                 web.get(
