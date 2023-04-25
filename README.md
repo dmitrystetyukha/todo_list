@@ -1,9 +1,9 @@
 # TODO-list
 ---
-Todo-list pet project with _aiohttp_ in accordance with _Clean Architecture_ specifications. 
+Todo-list pet project with _aiohttp_. 
 
 ---
 
 Repository was implemented as an _inmemory_. 
 
-In the process - replacing _inmemory_ with _aiomysql_.
+[ ] In the process - replacing _inmemory_ with _aiomysql_.
